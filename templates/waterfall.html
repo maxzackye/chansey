@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">{{ metric }} 指标瀑布图</h3>
+                <div class="card-actions">
+                    <a href="/analyze" class="btn btn-secondary">返回分析结果</a>
+                    <a href="/" class="btn btn-outline-secondary">重新开始</a>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h5>分析期间</h5>
+                    <p>观察期: {{ obs_date }} | 对比期: {{ cmp_date }}</p>
+                </div>
+                
+                <div id="waterfall-chart" style="height: 600px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 解析并绘制瀑布图
+    var plotData = {{ plot|safe }};
+    Plotly.newPlot('waterfall-chart', plotData.data, plotData.layout, {responsive: true});
+</script>
+{% endblock %}

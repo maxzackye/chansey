@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">配置数据字段</h3>
+            </div>
+            <div class="card-body">
+                <form method="post" action="/configure">
+                    <div class="mb-3">
+                        <label class="form-label">已上传文件: {{ filename }}</label>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="sheet_name" class="form-label">选择工作表</label>
+                        <select class="form-select" id="sheet_name" name="sheet_name" required>
+                            <option value="">请选择工作表</option>
+                            {% for sheet in sheet_names %}
+                            <option value="{{ sheet }}">{{ sheet }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="date_column" class="form-label">选择日期字段</label>
+                        <select class="form-select" id="date_column" name="date_column" required>
+                            <option value="">请选择日期字段</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">选择维度字段（可多选）</label>
+                        <div id="dimension_columns_container">
+                            <!-- 维度字段复选框将通过JavaScript动态加载 -->
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">选择指标字段（可多选）</label>
+                        <div id="metric_columns_container">
+                            <!-- 指标字段复选框将通过JavaScript动态加载 -->
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">确认配置并预览数据</button>
+                    <a href="/" class="btn btn-secondary">重新上传</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 当工作表选择改变时，动态加载字段选项
+    document.getElementById('sheet_name').addEventListener('change', function() {
+        const sheetName = this.value;
+        if (sheetName) {
+            // 发送AJAX请求获取字段信息
+            fetch(`/columns/${sheetName}`)
+                .then(response => response.json())
+                .then(data => {
+                    // 更新日期字段下拉框
+                    const dateColumnSelect = document.getElementById('date_column');
+                    dateColumnSelect.innerHTML = '<option value="">请选择日期字段</option>';
+                    data.columns.forEach(column => {
+                        const option = document.createElement('option');
+                        option.value = column;
+                        option.textContent = column;
+                        dateColumnSelect.appendChild(option);
+                    });
+                    
+                    // 更新维度字段复选框
+                    const dimensionContainer = document.getElementById('dimension_columns_container');
+                    dimensionContainer.innerHTML = '';
+                    data.columns.forEach(column => {
+                        const div = document.createElement('div');
+                        div.className = 'form-check';
+                        div.innerHTML = `
+                            <input class="form-check-input" type="checkbox" name="dimension_columns" value="${column}" id="dim_${column}">
+                            <label class="form-check-label" for="dim_${column}">${column}</label>
+                        `;
+                        dimensionContainer.appendChild(div);
+                    });
+                    
+                    // 更新指标字段复选框
+                    const metricContainer = document.getElementById('metric_columns_container');
+                    metricContainer.innerHTML = '';
+                    data.columns.forEach(column => {
+                        const div = document.createElement('div');
+                        div.className = 'form-check';
+                        div.innerHTML = `
+                            <input class="form-check-input" type="checkbox" name="metric_columns" value="${column}" id="metric_${column}">
+                            <label class="form-check-label" for="metric_${column}">${column}</label>
+                        `;
+                        metricContainer.appendChild(div);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+    });
+</script>
+{% endblock %}

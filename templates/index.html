@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">上传Excel数据文件</h3>
+            </div>
+            <div class="card-body">
+                <form method="post" action="/upload" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="file" class="form-label">选择Excel文件</label>
+                        <input class="form-control" type="file" id="file" name="file" accept=".xlsx,.xls">
+                        <div class="form-text">支持的格式: .xlsx, .xls (最大16MB)</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">上传文件</button>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="card-title">使用说明</h5>
+            </div>
+            <div class="card-body">
+                <ol>
+                    <li>上传包含业务数据的Excel文件</li>
+                    <li>选择数据表和字段配置</li>
+                    <li>预览数据确认无误</li>
+                    <li>执行分析并查看结果</li>
+                </ol>
+                <p>注意：Excel文件应包含以下信息：</p>
+                <ul>
+                    <li>日期字段：用于区分观察期和对比期</li>
+                    <li>维度字段：用于分组分析的字段（如产品、地区、渠道等）</li>
+                    <li>指标字段：需要分析的数值型字段（如销售额、访问量等）</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
