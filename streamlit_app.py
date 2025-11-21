@@ -829,6 +829,198 @@ def results_page():
             else:
                 st.error("AI综合分析失败，请检查网络连接或认证信息")
 
+    # 添加AI分析报告导出功能
+    st.markdown("---")
+    st.subheader("AI分析报告导出")
+    st.markdown("导出包含完整分析过程、AI解读和优化建议的分析报告")
+    
+    if st.button("生成AI分析报告"):
+        with st.spinner("正在生成AI分析报告，请稍候..."):
+            # 构造分析配置
+            analysis_config = {}
+            if analysis_results:
+                analysis_config = {
+                    'obs_date_range': analysis_results[0].get('obs_date_range'),
+                    'cmp_date_range': analysis_results[0].get('cmp_date_range'),
+                    'dimensions': [r.get('dimension') for r in analysis_results]
+                }
+            
+            # 调用大模型生成详细的分析报告
+            analyzer = LLMAnalyzer()
+            llm_response = analyzer.analyze_data(analysis_results, analysis_config)
+            
+            if llm_response:
+                # 生成完整的HTML分析报告
+                html_report = generate_ai_html_report(analysis_results, analysis_config, llm_response)
+                
+                # 提供下载链接
+                b64 = base64.b64encode(html_report.encode()).decode()
+                href = f'<a href="data:text/html;base64,{b64}" download="chansey_ai_analysis_report.html">点击下载AI分析报告</a>'
+                st.markdown(href, unsafe_allow_html=True)
+                
+                st.success("AI分析报告生成完成！")
+                st.markdown("**AI分析报告内容:**")
+                # 直接在网页上显示报告内容
+                st.markdown(html_report, unsafe_allow_html=True)
+            else:
+                st.error("AI分析报告生成失败，请检查网络连接或认证信息")
+
+def generate_ai_html_report(analysis_results, analysis_config, ai_interpretation):
+    """生成AI分析报告HTML"""
+    html_content = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Chansey AI数据分析报告</title>
+        <meta charset="utf-8">
+        <style>
+            body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
+            h1, h2, h3 { color: #333; }
+            h1 { border-bottom: 2px solid #333; padding-bottom: 10px; }
+            h2 { border-left: 4px solid #007acc; padding-left: 10px; }
+            table { border-collapse: collapse; width: 100%; margin: 10px 0; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            th { background-color: #f2f2f2; }
+            .section { margin: 20px 0; }
+            .chart { margin: 20px 0; }
+            img { max-width: 100%; }
+            pre { background-color: #f5f5f5; padding: 10px; overflow-x: auto; }
+            ul { margin-top: 0; }
+            li { margin-bottom: 10px; }
+        </style>
+    </head>
+    <body>
+        <h1>Chansey AI数据分析报告</h1>
+        
+        <div class="section">
+            <h2>1. 报告基本信息</h2>
+    """
+    
+    # 报告基本信息
+    html_content += f"<p><strong>观察期:</strong> {analysis_config.get('obs_date_range', 'N/A')}</p>\n"
+    html_content += f"<p><strong>对比期:</strong> {analysis_config.get('cmp_date_range', 'N/A')}</p>\n"
+    html_content += f"<p><strong>分析维度:</strong> {', '.join(analysis_config.get('dimensions', []))}</p>\n"
+    
+    html_content += "</div>\n"
+    
+    # 分析过程和结果
+    html_content += """
+        <div class="section">
+            <h2>2. 分析过程和结果</h2>
+    """
+    
+    html_content += "\n"
+    
+    for i, result in enumerate(analysis_results):
+        html_content += f"<h3>指标 {i+1}: {result.get('metric_name', 'N/A')}</h3>\n"
+        html_content += "<ul>\n"
+        html_content += f"  <li><strong>指标类型:</strong> {'数值指标' if result.get('metric_type') == 'numeric' else '比例指标'}</li>\n"
+        html_content += f"  <li><strong>分析维度:</strong> {result.get('dimension', 'N/A')}</li>\n"
+        html_content += f"  <li><strong>对比期数值:</strong> {result.get('cmp_total', 'N/A')}</li>\n"
+        html_content += f"  <li><strong>观察期数值:</strong> {result.get('obs_total', 'N/A')}</li>\n"
+        
+        # 计算变化情况
+        obs_total = result.get('obs_total', 0)
+        cmp_total = result.get('cmp_total', 0)
+        change = obs_total - cmp_total
+        change_pct = (change / cmp_total * 100) if cmp_total != 0 else 0
+        html_content += f"  <li><strong>变化量:</strong> {change:.4f}</li>\n"
+        html_content += f"  <li><strong>变化率:</strong> {change_pct:.2f}%</li>\n"
+        html_content += "</ul>\n"
+        
+        # 添加详细数据摘要
+        data = result.get('data', [])
+        if data:
+            html_content += "<h4>主要贡献维度:</h4>\n"
+            html_content += "<table>\n"
+            html_content += "<thead><tr>"
+            
+            # 获取表头
+            keys = list(data[0].keys())
+            for key in keys[:6]:  # 只显示前几列
+                html_content += f"<th>{key}</th>"
+            html_content += "<th>总贡献</th><th>量的贡献</th><th>率的贡献</th>"
+            html_content += "</tr></thead>\n"
+            html_content += "<tbody>\n"
+            
+            # 按总贡献排序
+            sorted_data = sorted(data, key=lambda x: abs(x.get('总贡献', 0)), reverse=True)
+            for j, item in enumerate(sorted_data[:10]):  # 取前10个
+                html_content += "<tr>"
+                # 显示维度值和其他关键信息
+                for key in keys[:6]:
+                    html_content += f"<td>{item.get(key, 'N/A')}</td>"
+                html_content += f"<td>{item.get('总贡献', 0):.4f}</td>"
+                html_content += f"<td>{item.get('量的贡献', 0):.4f}</td>"
+                html_content += f"<td>{item.get('率的贡献', 0):.4f}</td>"
+                html_content += "</tr>\n"
+            
+            html_content += "</tbody></table>\n"
+        html_content += "<br/>\n"
+    
+    html_content += "</div>\n"
+    
+    # AI解读部分
+    html_content += """
+        <div class="section">
+            <h2>3. AI分析解读</h2>
+    """
+    
+    # 将AI解读内容转换为纯HTML格式，处理换行和列表
+    if ai_interpretation:
+        # 将文本中的换行转换为HTML的<br>标签
+        ai_html = ai_interpretation.replace('\n\n', '</p><p>').replace('\n', '<br>')
+        html_content += f"<p>{ai_html}</p>\n"
+    else:
+        html_content += "<p>未能生成AI分析解读内容。</p>\n"
+        
+    html_content += "</div>\n"
+    
+    # 优化建议部分
+    html_content += """
+        <div class="section">
+            <h2>4. 可优化的方向和建议</h2>
+            <p>为进一步提升分析效果和业务价值，建议考虑以下几个方面:</p>
+            
+            <h3>1. 数据质量优化:</h3>
+            <ul>
+                <li>检查数据完整性，确保没有缺失值影响分析准确性</li>
+                <li>定期校验数据一致性，避免异常值干扰分析结果</li>
+            </ul>
+            
+            <h3>2. 分析维度拓展:</h3>
+            <ul>
+                <li>结合业务场景，探索更多潜在影响因素</li>
+                <li>考虑引入外部数据，丰富分析维度</li>
+            </ul>
+            
+            <h3>3. 分析方法改进:</h3>
+            <ul>
+                <li>对于重要指标，可建立长期趋势监控机制</li>
+                <li>引入预测模型，提前预警指标异常变化</li>
+            </ul>
+            
+            <h3>4. 业务应用深化:</h3>
+            <ul>
+                <li>将分析结论转化为具体可执行的业务动作</li>
+                <li>建立反馈机制，评估分析结果对业务的实际影响</li>
+            </ul>
+        </div>
+    """
+    
+    # 报告结尾
+    html_content += """
+        <div class="section">
+            <h2>5. 报告说明</h2>
+            <p>本报告基于Chansey数据分析工具生成，结合AI模型对业务指标变化进行了深度解读。<br>
+            报告内容仅供参考，具体业务决策请结合实际情况综合判断。</p>
+        </div>
+    </body>
+    </html>
+    """
+    
+    return html_content
+
 def generate_html_report(analysis_results, analysis_config):
     """生成HTML格式的完整分析报告"""
     html_content = """
