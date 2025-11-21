@@ -15,7 +15,7 @@ import requests
 
 # 1. 基本配置
 GATEWAY = "http://ai.caijj.net/chat/completions"
-TOKEN   = "sk-6X8QyIvh8MIYHPY3poaa_A"          # 替换成你的个人 Token
+TOKEN   = ""          # 替换成你的个人 Token
 MODEL   = "pub_qwen3-coder-plus_bailian"  # 也可换成其它可用模型
 
 # 2. 组装请求体
